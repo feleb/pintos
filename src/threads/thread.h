@@ -90,6 +90,8 @@ struct thread
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
     int64_t wakeup_time;                /* Time to wake up the thread. */
+    int original_priority;              /* Have the original priority in case priority changed when donation takes place */
+    struct list donated_list;           /* Have the donated priority */
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
@@ -140,5 +142,6 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
 bool comp_priority (const struct list_elem *a , const struct list_elem *b , void *aux);
+bool comp2 (const struct list_elem *a , const struct list_elem *b , void *aux);
 
 #endif /* threads/thread.h */

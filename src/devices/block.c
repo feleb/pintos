@@ -5,7 +5,7 @@
 #include "devices/ide.h"
 #include "threads/malloc.h"
 
-/* A block device.  */
+/* A block device. */
 struct block
   {
     struct list_elem list_elem;         /* Element in all_blocks. */
