@@ -180,7 +180,8 @@ void
 lock_init (struct lock *lock)
 {
   ASSERT (lock != NULL);
-
+  /* initialize donated priority with -1 because no donations occured yet */
+  lock->priority =-1;
   lock->holder = NULL;
   sema_init (&lock->semaphore, 1);
 }
@@ -200,18 +201,18 @@ lock_acquire (struct lock *lock)
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
   /* Insert */
-  if(lock->holder != NULL){
-    if(list_empty(&thread_current()->donated_list))
-      list_push_back(&lock->holder->donated_list , &thread_current()->elem);
-    else
-      list_insert_ordered(&lock->holder->donated_list , &thread_current()->elem , comp2 , NULL);
-    if(lock->holder->priority < thread_current()->priority){
-      lock->holder->priority = thread_current()->priority;
+  struct thread *holder = lock->holder; 
+  struct thread *cur = thread_current();
+  if(holder != NULL){
+    if(lock->priority < cur->priority){
+      lock->priority = cur->priority;
+      if(holder->priority < cur->priority)
+        holder->priority = cur->priority;
     }
   }
-
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
+  list_push_back(&lock->holder->donated_list , &lock->elem);
 }
 
 /* Tries to acquires LOCK and returns true if successful or false
@@ -244,21 +245,19 @@ lock_release (struct lock *lock)
 {
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
-  
-  /* set the priority of the lock holder with tha max between original priority and the max of donated priorities */
-  if(!list_empty(&thread_current()->donated_list))
-  list_pop_front(&thread_current()->donated_list);
-  if(!list_empty(&thread_current()->donated_list)){
 
-    int max_donated = list_entry(list_front(&thread_current()->donated_list) , struct thread , elem)->priority;
-    if(max_donated > thread_current()->original_priority) {
-      //lock->holder->priority = lock->holder->original_priority;
-      lock->holder->priority = max_donated;
-    }
-    else
-     lock->holder->priority = lock->holder->original_priority;
+  
+  lock->priority = -1;
+  int max_donated = -1;
+  list_remove(&lock->elem);
+  if(!list_empty(&lock->holder->donated_list)){
+    max_donated = list_entry(list_max(&lock->holder->donated_list , comp_priority , NULL ) , struct lock , elem)->priority;
+    if(lock->holder->original_priority < max_donated) lock->holder->priority = max_donated;
+    else lock->holder->priority = lock->holder->original_priority;
   }
-  //lock->holder->priority = lock->holder->original_priority;
+  else{
+    lock->holder->priority = lock->holder->original_priority;
+  }
   lock->holder = NULL;
   sema_up (&lock->semaphore);
 }

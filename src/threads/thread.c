@@ -351,14 +351,13 @@ thread_set_priority (int new_priority)
 {
   
   /* check if any donations occurs don't update value if new priority less than donated priority */
-  if(!list_empty(&thread_current()->donated_list) && new_priority < 
-    list_entry(list_front(&thread_current()->donated_list) , struct thread , elem)->priority){
-      thread_current()->original_priority = new_priority;
+  if(thread_current()->priority != thread_current()->original_priority && new_priority < thread_current()->priority){
+    thread_current()->original_priority = new_priority;
   }
-  //if(new_priority < thread_current()->donated_priority)
-    //thread_current()->original_priority = new_priority;
-  else
+  else{
    thread_current ()->priority = new_priority;
+   thread_current ()->original_priority = new_priority;
+  }
 
   /* Check if the current thread reduces its priority then preempt if there is any thread with higher priority */ 
   if(!list_empty(&ready_list) && list_entry(list_max(&ready_list , comp_priority , NULL) , struct thread , elem)->priority > new_priority)
@@ -619,8 +618,3 @@ comp_priority (const struct list_elem *a , const struct list_elem *b , void *aux
   return list_entry(a , struct thread , elem)->priority < list_entry(b , struct thread , elem)->priority;
 }
 
-bool 
-comp2 (const struct list_elem *a , const struct list_elem *b , void *aux UNUSED)
-{
-  return list_entry(a , struct thread , elem)->priority > list_entry(b , struct thread , elem)->priority;
-}
