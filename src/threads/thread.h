@@ -143,5 +143,6 @@ int thread_get_load_avg (void);
 
 bool comp_priority (const struct list_elem *a , const struct list_elem *b , void *aux);
 bool comp2 (const struct list_elem *a , const struct list_elem *b , void *aux);
+void update_priorities(struct thread *last_holder , int last_donated);
 
 #endif /* threads/thread.h */

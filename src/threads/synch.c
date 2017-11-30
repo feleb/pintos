@@ -200,12 +200,12 @@ lock_acquire (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
-  /* Insert */
   struct thread *holder = lock->holder; 
   struct thread *cur = thread_current();
   if(holder != NULL){
     if(lock->priority < cur->priority){
       lock->priority = cur->priority;
+      //update_priorities(holder , cur->priority);
       if(holder->priority < cur->priority)
         holder->priority = cur->priority;
     }
@@ -249,12 +249,20 @@ lock_release (struct lock *lock)
   
   lock->priority = -1;
   int max_donated = -1;
+
+  /* Remove the lock from the donated list */
   list_remove(&lock->elem);
+  
+
   if(!list_empty(&lock->holder->donated_list)){
+
+    /* Compare between the maximum donated priority and the original priority to choose the max between them */
     max_donated = list_entry(list_max(&lock->holder->donated_list , comp_priority , NULL ) , struct lock , elem)->priority;
     if(lock->holder->original_priority < max_donated) lock->holder->priority = max_donated;
     else lock->holder->priority = lock->holder->original_priority;
   }
+
+  /* If list is empty then return the original priority of the thread */
   else{
     lock->holder->priority = lock->holder->original_priority;
   }

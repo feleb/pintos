@@ -618,3 +618,14 @@ comp_priority (const struct list_elem *a , const struct list_elem *b , void *aux
   return list_entry(a , struct thread , elem)->priority < list_entry(b , struct thread , elem)->priority;
 }
 
+
+void
+update_priorities(struct thread *last_holder , int last_donated){
+  struct list_elem *e;
+  if(last_holder->priority < last_donated) last_holder->priority = last_donated;
+  if(!list_empty(&last_holder->donated_list)){
+    for (e = list_begin (&last_holder->donated_list); e != list_end (&last_holder->donated_list); e = list_next (e))
+    return update_priorities(list_entry(e , struct lock , elem )->holder,last_donated);
+  }
+  else return;
+}
