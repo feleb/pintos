@@ -489,6 +489,7 @@ init_thread (struct thread *t, const char *name, int priority)
   /* Initialize original priority with thread priority */
   t->original_priority = priority;
   list_init (&t->donated_list);
+  t->acquired_lock = NULL;
   t->magic = THREAD_MAGIC;
   list_push_back (&all_list, &t->allelem);
 }
@@ -620,12 +621,22 @@ comp_priority (const struct list_elem *a , const struct list_elem *b , void *aux
 
 
 void
-update_priorities(struct thread *last_holder , int last_donated){
-  struct list_elem *e;
-  if(last_holder->priority < last_donated) last_holder->priority = last_donated;
-  if(!list_empty(&last_holder->donated_list)){
-    for (e = list_begin (&last_holder->donated_list); e != list_end (&last_holder->donated_list); e = list_next (e))
-    return update_priorities(list_entry(e , struct lock , elem )->holder,last_donated);
+update_priorities(struct thread *lock_holder , int current_priority){
+
+  /* Iterate on any chain of threads which are connected by locks acquiring  */ 
+  while(lock_holder->acquired_lock != NULL){
+
+    /* Update the priority of the lock acquired by the holder */
+    if(lock_holder->acquired_lock->priority < current_priority){
+      lock_holder->acquired_lock->priority = current_priority;
+
+      /* Iterator */
+      lock_holder = lock_holder->acquired_lock->holder;
+
+      /* Update priority of the thread */
+      if( lock_holder->priority < current_priority )
+      lock_holder->priority = current_priority;
+    }
+    else return;
   }
-  else return;
 }

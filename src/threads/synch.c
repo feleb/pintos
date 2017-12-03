@@ -203,15 +203,18 @@ lock_acquire (struct lock *lock)
   struct thread *holder = lock->holder; 
   struct thread *cur = thread_current();
   if(holder != NULL){
-    if(lock->priority < cur->priority){
-      lock->priority = cur->priority;
-      //update_priorities(holder , cur->priority);
-      if(holder->priority < cur->priority)
-        holder->priority = cur->priority;
-    }
+    
+    /* Set acquired lock by the current thread by the lock acquiring for */
+    cur->acquired_lock = lock;
+
+    /* Start the process of the donation */
+    update_priorities(cur , cur->priority);
   }
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
+  cur->acquired_lock = NULL;
+
+  /* push the current lock to list of locks holded by current thread */
   list_push_back(&lock->holder->donated_list , &lock->elem);
 }
 
@@ -352,13 +355,18 @@ cond_signal (struct condition *cond, struct lock *lock UNUSED)
   ASSERT (lock_held_by_current_thread (lock));
 
   if (!list_empty (&cond->waiters)){
-    sema_up (&list_entry (list_pop_front (&cond->waiters),
-                          struct semaphore_elem, elem)->semaphore);
-    //semaphore_elem waiter = list_entry();
-    //struct thread *holder = list_entry(list_max(&cond->waiters , comp_priority , NULL) , struct thread , elem);
-    //list_remove(&holder->elem);
-    //sema_up(&list_entry (&holder->elem , struct semaphore_elem , elem)->semaphore );
-  }
+    
+    int max=0;
+    struct semaphore_elem *sema;
+    for(struct list_elem *cur=list_begin(&cond->waiters);cur!=list_end(&cond->waiters);cur=list_next(cur)){
+      if(max<list_entry(list_front(&list_entry(cur,struct semaphore_elem,elem)->semaphore.waiters),struct thread,elem)->priority){
+        max=list_entry(list_front(&list_entry(cur,struct semaphore_elem,elem)->semaphore.waiters),struct thread,elem)->priority;
+        sema=list_entry(cur,struct semaphore_elem,elem) ;
+      }
+     }
+     list_remove(&sema->elem);
+     sema_up(&sema->semaphore);
+    }
 }
 
 /* Wakes up all threads, if any, waiting on COND (protected by

@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include "threads/synch.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -95,6 +96,7 @@ struct thread
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
+    struct lock *acquired_lock ;          /* The lock at which thread is acquiring */
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -143,6 +145,6 @@ int thread_get_load_avg (void);
 
 bool comp_priority (const struct list_elem *a , const struct list_elem *b , void *aux);
 bool comp2 (const struct list_elem *a , const struct list_elem *b , void *aux);
-void update_priorities(struct thread *last_holder , int last_donated);
+void update_priorities(struct thread *lock_holder , int current_priority);
 
 #endif /* threads/thread.h */
