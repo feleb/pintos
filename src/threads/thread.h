@@ -4,7 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
-#include "threads/synch.h"
+//#include "threads/synch.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -84,6 +84,8 @@ typedef int tid_t;
 struct thread
   {
     /* Owned by thread.c. */
+    int nice;
+    int recent_cpu;
     tid_t tid;                          /* Thread identifier. */
     enum thread_status status;          /* Thread state. */
     char name[16];                      /* Name (for debugging purposes). */
@@ -146,5 +148,47 @@ int thread_get_load_avg (void);
 bool comp_priority (const struct list_elem *a , const struct list_elem *b , void *aux);
 bool comp2 (const struct list_elem *a , const struct list_elem *b , void *aux);
 void update_priorities(struct thread *lock_holder , int current_priority);
+
+void
+priority_mlfqs(void);
+
+void
+recent_cpu_mlfqs(void);
+
+void 
+load_avg_mlfqs(void);
+
+int 
+I_to_f(int n);
+
+int 
+f_to_I(int x);
+
+int
+add_f_to_f(int x,int y);
+
+int 
+sub_f_from_f(int x,int y);
+
+int 
+add_f_to_I(int x,int n);
+
+int 
+ sub_I_from_f (int x,int n);
+
+int
+Mul_f_to_f (int x,int y);
+
+int 
+Mul_f_to_I (int x,int n);
+
+int
+Div_f_over_f(int x,int y);
+
+int 
+Div_f_over_I (int x,int n);
+
+int 
+ready_threads (void);
 
 #endif /* threads/thread.h */
